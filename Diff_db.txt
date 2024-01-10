@@ -55,3 +55,55 @@ pg_result = pg_conn.exec("SELECT * FROM your_table")
 # 結論
   ・小規模データや迅速なチェックにはCSVエクスポートが適しています。
   ・大規模データや複雑な比較が必要な場合はRubyスクリプトが適しています。
+
+```ruby
+require 'mysql2'
+require 'pg'
+
+# 设置数据库连接
+mysql_client = Mysql2::Client.new(host: 'mysql_host', username: 'user', password: 'password', database: 'mysql_database')
+pg_conn = PG.connect(dbname: 'postgres_database', user: 'user', password: 'password', host: 'postgres_host')
+
+# 获取 MySQL 的表结构
+mysql_tables = mysql_client.query("SHOW TABLES")
+mysql_structure = {}
+mysql_tables.each do |table|
+  table_name = table.values[0]
+  mysql_structure[table_name] = mysql_client.query("DESCRIBE #{table_name}").map(&:to_h)
+end
+
+# 获取 PostgreSQL 的表结构
+pg_tables = pg_conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+postgres_structure = {}
+pg_tables.each do |table|
+  table_name = table['table_name']
+  columns = pg_conn.exec("SELECT column_name, data_type, character_maximum_length FROM information_schema.columns WHERE table_name ='#{table_name}'")
+  postgres_structure[table_name] = columns.map(&:to_h)
+end
+
+# 比较表结构
+def compare_structures(mysql_structure, postgres_structure)
+  differences = {}
+
+  mysql_structure.each do |table_name, mysql_columns|
+    postgres_columns = postgres_structure[table_name]
+    next unless postgres_columns
+
+    diff = mysql_columns - postgres_columns
+    differences[table_name] = diff unless diff.empty?
+  end
+
+  differences
+end
+
+# 输出比较结果
+differences = compare_structures(mysql_structure, postgres_structure)
+if differences.empty?
+  puts "All table structures are consistent."
+else
+  differences.each do |table_name, diff|
+    puts "Differences in #{table_name}:"
+    diff.each { |column| puts "  - #{column}" }
+  end
+end
+```
