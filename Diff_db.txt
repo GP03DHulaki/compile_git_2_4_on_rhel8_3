@@ -172,3 +172,46 @@ else
   end
 end
 ```
+
+```ruby
+require 'mysql2'
+require 'pg'
+
+# Database credentials
+mysql_credentials = { host: 'mysql_host', username: 'mysql_user', password: 'mysql_password', database: 'mysql_db' }
+pg_credentials = { host: 'pg_host', user: 'pg_user', password: 'pg_password', dbname: 'pg_db' }
+
+# Connect to MySQL
+mysql_client = Mysql2::Client.new(mysql_credentials)
+
+# Connect to PostgreSQL
+pg_conn = PG.connect(pg_credentials)
+
+# Get list of tables from MySQL
+mysql_tables = mysql_client.query("SHOW TABLES").map { |row| row.values.first }
+
+# Get list of tables from PostgreSQL
+pg_tables = pg_conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").map { |row| row['table_name'] }
+
+# Compare table counts
+if mysql_tables.count != pg_tables.count
+  puts "Different number of tables. MySQL has #{mysql_tables.count}, PostgreSQL has #{pg_tables.count}."
+  exit
+end
+
+# Compare table data
+mysql_tables.each do |table|
+  mysql_data = mysql_client.query("SELECT * FROM #{table}").to_a
+  pg_data = pg_conn.exec("SELECT * FROM #{table}").to_a
+
+  if mysql_data == pg_data
+    puts "Table '#{table}' is identical."
+  else
+    puts "Table '#{table}' differs."
+  end
+end
+
+# Close the database connections
+mysql_client.close
+pg_conn.close
+```
