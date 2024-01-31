@@ -18,6 +18,71 @@
 ```bash
 diff mysql_data.csv postgres_data.csv
 ```
+
+```bat
+@echo off
+SETLOCAL EnableDelayedExpansion
+
+SET DB_NAME=%1
+SET MYSQL_USER=%2
+SET MYSQL_PASS=%3
+
+IF "%DB_NAME%"=="" GOTO :MISSING_ARGS
+IF "%MYSQL_USER%"=="" GOTO :MISSING_ARGS
+IF "%MYSQL_PASS%"=="" GOTO :MISSING_ARGS
+
+ECHO Exporting tables from MySQL database '%DB_NAME%'...
+
+FOR /F "tokens=*" %%G IN ('mysql -u%MYSQL_USER% -p%MYSQL_PASS% -e "SHOW TABLES FROM %DB_NAME%;"') DO (
+    SET TABLE=%%G
+    IF "!TABLE!"=="Tables_in_%DB_NAME%" (
+        ECHO Skipping header...
+    ) ELSE (
+        ECHO Exporting !TABLE!...
+        mysqldump -u%MYSQL_USER% -p%MYSQL_PASS% --fields-terminated-by=, --tab=./%DB_NAME%/ %DB_NAME% !TABLE!
+    )
+)
+
+ECHO Done.
+GOTO :EOF
+
+:MISSING_ARGS
+ECHO Usage: export_mysql_tables.bat [DatabaseName] [MySQLUsername] [MySQLPassword]
+GOTO :EOF
+```
+
+```bat
+@echo off
+SETLOCAL EnableDelayedExpansion
+
+SET DB_NAME=%1
+SET PSQL_USER=%2
+SET PSQL_PASS=%3
+
+IF "%DB_NAME%"=="" GOTO :MISSING_ARGS
+IF "%PSQL_USER%"=="" GOTO :MISSING_ARGS
+IF "%PSQL_PASS%"=="" GOTO :MISSING_ARGS
+
+ECHO Exporting tables from PostgreSQL database '%DB_NAME%'...
+
+SET PGPASSWORD=%PSQL_PASS%
+FOR /F "tokens=*" %%G IN ('psql -U %PSQL_USER% -d %DB_NAME% -t -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';"') DO (
+    SET TABLE=%%G
+    SET TABLE=!TABLE: =!
+    IF NOT "!TABLE!"=="" (
+        ECHO Exporting !TABLE!...
+        psql -U %PSQL_USER% -d %DB_NAME% -c "COPY (SELECT * FROM !TABLE!) TO STDOUT WITH CSV HEADER" > "./%DB_NAME%/!TABLE!.csv"
+    )
+)
+
+ECHO Done.
+GOTO :EOF
+
+:MISSING_ARGS
+ECHO Usage: export_postgres_tables.bat [DatabaseName] [PostgreSQLUsername] [PostgreSQLPassword]
+GOTO :EOF
+```
+
 # Rubyスクリプトを使用したデータ検証
 
 1.方法:
