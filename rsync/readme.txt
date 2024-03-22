@@ -12,7 +12,6 @@ Then you should be able to use Rsync command in Windows 10 via Git Bash.
 前提条件：特になし。xcopyはWindowsに標準で含まれているコマンドラインツールで、追加のインストールは不要です。
 使用方法：
 cmd
-Copy code
 xcopy /s /e /h /k /o /x /y ソースパス 宛先パス
 パラメータ説明：
 /s：空でないディレクトリとサブディレクトリをコピーします。
@@ -27,7 +26,6 @@ xcopy /s /e /h /k /o /x /y ソースパス 宛先パス
 前提条件：robocopyもWindowsに標準で含まれているコマンドラインツールですが、古いバージョンのWindowsでは利用できないことがあります。システムにこのツールがあることを確認してください。
 使用方法：
 cmd
-Copy code
 robocopy ソースパス 宛先パス /MIR /COPYALL /DCOPY:T /R:3 /W:10 /LOG:robocopy_log.txt
 パラメータ説明：
 /MIR：ディレクトリとそのすべてのサブディレクトリをミラーリングします。
@@ -61,7 +59,6 @@ Windowsファイアウォールで、ファイルとプリンターの共有（S
 使用方法：
 CygwinまたはWSL環境で以下のコマンドを使用します：
 bash
-Copy code
 rsync -avz --progress ソースパス ユーザー名@宛先マシンIP:宛先パス
 パラメータ説明：
 -a：アーカイブモードで、権限やリンクなどを保持します。
